@@ -61,7 +61,7 @@ window.addEventListener('load', function (e) {
 
     document.body.addEventListener('keydown', function (e) {
         var code = e.code;
-        if (code == 'Escape') //quit app
+        if (code == 'KeyQ') //quit app
         {
             window.electronAPI.quitApp();
             reutrn;

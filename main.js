@@ -14,6 +14,7 @@ const path = require('path')
 
 const child_process = require('node:child_process')
 let notice = null;
+let mainWindow = null;
 
 //!!! 透明窗口黑屏的问题
 // 经过不断切换版本,发现不是 electron 的问题，而是i3wm的问题
@@ -68,7 +69,7 @@ async function respHandleMoveCursor(e, xPos, yPos) {
 }
 
 const createWindow = () => {
-    const mainWindow = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         height: 1080,
         width: 1920,
         transparent: true,
@@ -82,35 +83,54 @@ const createWindow = () => {
         }
     });
     mainWindow.loadFile("index.html");
-
     //mainWindow.webContents.openDevTools()
 };
 
-app.whenReady().then(() => {
-    notice = Notification({title: 'Board: '});
+//!!! single instance support
+const additionalData = {key: 'single-instance'}
+const gotLock = app.requestSingleInstanceLock(additionalData)
 
-    //quit app
-    ipcMain.on('quit-app', () => {app.quit()});
+if (!gotLock) {
+    app.quit()
+} else {
+    app.on('second-instance', (event, commandLine, workingDirectory, additionData) => {
+        console.log(additionData)
 
-    //单向通道
-    ipcMain.on('send-board-pos', handleMoveCursor);
-
-    //双向
-    //ipcMain.handle('resp-send-board-pos', respHandleMoveCursor);
-
-    createWindow()
-
-    app.on('activate', () => {
-        // 在 macOS 系统内, 如果没有已开启的应用窗口
-        // 点击托盘图标时通常会重新创建一个新窗口
-        if (BrowserWindow.getAllWindows().length === 0) createWindow()
+        if (mainWindow) {
+            //!!! minimize() not work in linux 
+            if (!mainWindow.isVisible()) mainWindow.show()
+            mainWindow.focus()
+        }
     })
-})
 
-// 除了 macOS 外，当所有窗口都被关闭的时候退出程序。 因此, 通常
-// 对应用程序和它们的菜单栏来说应该时刻保持激活状态, 
-// 直到用户使用 Cmd + Q 明确退出
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit()
-})
+    app.whenReady().then(() => {
+        notice = Notification({title: 'Board: '});
+
+        //hide app
+        ipcMain.on('quit-app', () => {mainWindow.hide()});
+
+        //单向通道
+        ipcMain.on('send-board-pos', handleMoveCursor);
+
+        //双向
+        //ipcMain.handle('resp-send-board-pos', respHandleMoveCursor);
+
+        createWindow()
+
+        app.on('activate', () => {
+            // 在 macOS 系统内, 如果没有已开启的应用窗口
+            // 点击托盘图标时通常会重新创建一个新窗口
+            if (BrowserWindow.getAllWindows().length === 0) createWindow()
+        })
+    })
+
+    // 除了 macOS 外，当所有窗口都被关闭的时候退出程序。 因此, 通常
+    // 对应用程序和它们的菜单栏来说应该时刻保持激活状态, 
+    // 直到用户使用 Cmd + Q 明确退出
+    app.on('window-all-closed', () => {
+        if (process.platform !== 'darwin') app.quit()
+    })
+
+}
+
 

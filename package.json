@@ -1,6 +1,6 @@
 {
     "name": "xdotool-board",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "just input <xPos> x <yPos> <Enter> to move the cursor",
     "main": "main.js",
     "scripts": {
