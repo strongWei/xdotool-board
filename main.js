@@ -1,3 +1,5 @@
+//TODO: this software use 251 mb, too big
+
 //!!! 进程模型:
 //    主进程: 可以访问所有 nodejs api, electron api 
 //    渲染进程: 一个BrowserWindow将生成一个该进程 
@@ -7,9 +9,11 @@
 //    效率进程: 相当于后台任务，UtilityProcess Api, 可访问所有的 nodejs api
 //    
 
-//TODO: missing Maintainer field
+//deb: missing Maintainer field
+//see forge.config.js
 
-const {app, BrowserWindow, ipcMain, Notification} = require('electron')
+const {app, BrowserWindow, ipcMain, Notification, Menu, Tray}
+    = require('electron')
 const path = require('path')
 
 const child_process = require('node:child_process')
@@ -47,6 +51,7 @@ const moveCursor = (xPos, yPos) => {
 async function handleMoveCursor(e, xPos, yPos) {
     try {
         await moveCursor(xPos, yPos)
+        hideApp()
     } catch (err) {
         console.error(err)
         notice.body = err.toString()
@@ -68,6 +73,15 @@ async function respHandleMoveCursor(e, xPos, yPos) {
     return true;
 }
 
+const hideApp = () => {
+    //!!! minimize() not work in linux 
+    if (process.platform == 'linux') {
+        mainWindow.hide()
+    } else {
+        mainWindow.minimize()
+    }
+}
+
 const createWindow = () => {
     mainWindow = new BrowserWindow({
         height: 1080,
@@ -75,6 +89,7 @@ const createWindow = () => {
         transparent: true,
         frame: false,
         backgroundColor: '#60ffffff',
+        //!!! if fullscreen in i3wm, the transparent will not work
         // fullscreen: true,
         alwaysOnTop: true,
         webPreferences: {
@@ -89,25 +104,39 @@ const createWindow = () => {
 //!!! single instance support
 const additionalData = {key: 'single-instance'}
 const gotLock = app.requestSingleInstanceLock(additionalData)
+let appIcon = null
 
 if (!gotLock) {
     app.quit()
 } else {
     app.on('second-instance', (event, commandLine, workingDirectory, additionData) => {
-        console.log(additionData)
+        //console.log(additionData)
 
         if (mainWindow) {
-            //!!! minimize() not work in linux 
             if (!mainWindow.isVisible()) mainWindow.show()
             mainWindow.focus()
         }
     })
 
     app.whenReady().then(() => {
+        //!!! must use absolute path
+        const iconPath = path.join(__dirname, 'board.png')
+        appIcon = new Tray(iconPath)
+        const contextMenu = Menu.buildFromTemplate([
+            {
+                label: 'exit',
+                role: 'quit',
+            },
+        ])
+
+        //contextMenu.items[1].checked = false
+        appIcon.setToolTip("xdotool-board")
+        appIcon.setContextMenu(contextMenu)
+
         notice = Notification({title: 'Board: '});
 
         //hide app
-        ipcMain.on('quit-app', () => {mainWindow.hide()});
+        ipcMain.on('hide-app', hideApp);
 
         //单向通道
         ipcMain.on('send-board-pos', handleMoveCursor);

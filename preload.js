@@ -6,7 +6,7 @@
 const {contextBridge, ipcRenderer} = require('electron')
 
 contextBridge.exposeInMainWorld('electronAPI', {
-    quitApp: () => ipcRenderer.send('quit-app'),
+    hideApp: () => ipcRenderer.send('hide-app'),
 
     //单向通道 
     sendBoardPos: (xPos, yPos) => ipcRenderer.send('send-board-pos', xPos, yPos)

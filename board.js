@@ -63,7 +63,7 @@ window.addEventListener('load', function (e) {
         var code = e.code;
         if (code == 'KeyQ') //quit app
         {
-            window.electronAPI.quitApp();
+            window.electronAPI.hideApp();
             reutrn;
         }
 
