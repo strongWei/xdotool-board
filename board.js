@@ -1,15 +1,16 @@
-window.addEventListener('load', function (e) {
+window.addEventListener("load", function (e) {
     var c = document.getElementById("xdoBoard");
     var ctx = c.getContext("2d");
     ctx.font = "30px Arial";
 
-    var xPos = '', yPos = '';
+    var xPos = "", yPos = "";
     var xPosReady = false, dotDrawed = false;
+    var keyedTex = "";
 
     //!!! restore/save 是存储属性的，如fillStyle
     function initBoard() {
         ctx.strokeStyle = "red";
-        ctx.fillStyle = "green"
+        ctx.fillStyle = "yellow"
         //horizontal line
         for (var i = 100; i < 1920; i += 100) {
             ctx.beginPath();
@@ -45,32 +46,44 @@ window.addEventListener('load', function (e) {
     function cleanBoard() {
 
         dotDrawed = false;
+        keyedTex = "";
         ctx.clearRect(0, 0, 1920, 1080);
         initBoard();
     }
 
     function resetBoard() {
         xPosReady = false;
-        xPos = '';
-        yPos = '';
-        if (dotDrawed) {
+        xPos = "";
+        yPos = "";
+        if (dotDrawed || keyedTex != "") {
             cleanBoard()
         }
     }
 
 
-    document.body.addEventListener('keydown', function (e) {
+    document.body.addEventListener("keydown", function (e) {
         var code = e.code;
-        if (code == 'KeyQ') //quit app
+        keyedTex += e.key;
+        ctx.fillStyle = "blue"
+        ctx.fillText(keyedTex, 900, 500);
+
+        if (code == "KeyQ") //quit app
         {
+            resetBoard()
             window.electronAPI.hideApp();
             reutrn;
         }
 
+        if (code == "KeyC") //clean board
+        {
+            resetBoard();
+            return;
+        }
+
         if (!xPosReady) {
-            if (code.indexOf('Digit') == 0) {
+            if (code.indexOf("Digit") == 0) {
                 xPos += code.slice(5)
-            } else if (xPos != "" && code.indexOf('Key') == 0 && code.slice(3) == 'X') {
+            } else if (xPos != "" && code.indexOf("Key") == 0 && code.slice(3) == "X") {
                 if (xPos <= 1920) {
                     xPosReady = true;
 
@@ -87,10 +100,10 @@ window.addEventListener('load', function (e) {
                 resetBoard()
             }
         } else {
-            if (code.indexOf('Digit') == 0) {
+            if (code.indexOf("Digit") == 0) {
                 yPos += code.slice(5);
-            } else if (code == 'Enter') {
-                if (yPos <= 1080) {
+            } else if (code == "Enter") {
+                if (yPos != "" && yPos <= 1080) {
                     cleanBoard();
 
                     ctx.beginPath();
@@ -102,7 +115,6 @@ window.addEventListener('load', function (e) {
 
                     //单向通道 
                     window.electronAPI.sendBoardPos(xPos, yPos);
-                    resetBoard()
 
                     //TODO: 为什么这里异步不会执行???
                     //async () => {

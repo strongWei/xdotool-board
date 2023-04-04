@@ -1,4 +1,7 @@
+//TODO: use tsconfig
+//TODO: don't use xdotool to move cursor, use node api
 //TODO: this software use 251 mb, too big
+//TODO: use one picture on the body, and add a div to move the cursor
 
 //!!! 进程模型:
 //    主进程: 可以访问所有 nodejs api, electron api 
@@ -51,7 +54,6 @@ const moveCursor = (xPos, yPos) => {
 async function handleMoveCursor(e, xPos, yPos) {
     try {
         await moveCursor(xPos, yPos)
-        hideApp()
     } catch (err) {
         console.error(err)
         notice.body = err.toString()
